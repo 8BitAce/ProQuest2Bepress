@@ -355,9 +355,9 @@ def load_config():
 
 def run_listener():
     # TODO: Change to append!
-    seen_files_f = open(".seen.txt", "w+")
+    seen_files_f = open(".seen.txt", "a+")
     seen_files = seen_files_f.readlines()
-    with open(".broken.txt", "w+") as b:
+    with open(".broken.txt", "r") as b:
         seen_files += b.readlines()
 
     # Main run loop
@@ -381,7 +381,7 @@ def run_listener():
                         # the file that caused the error.
                         print "There was a problem processing %s. An email has been sent detailing the issue." % (new_f)
                         print "Adding %s to .broken.txt. Please fix the issue, then remove the entry in .broken.txt!" % (new_f)
-                        with open(".broken.txt", "w+") as b:
+                        with open(".broken.txt", "a+") as b:
                             b.write(new_f + "\n")
                 else:
                     print "Non-zip file in upload directory!"
