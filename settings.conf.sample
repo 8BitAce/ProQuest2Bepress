@@ -1,0 +1,11 @@
+[dirs]
+upload_dir=
+
+[email]
+recipient_address=
+smtp_server=
+smtp_user=
+smtp_password=
+
+[dropbox]
+dbuploader_path=
