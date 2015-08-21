@@ -100,7 +100,6 @@ class TestTransformationMethods(unittest.TestCase):
 
         # Test Dropbox uploads
         print "Testing if everything is in Dropbox..."
-        # TODO: Fix
         self.assertEqual(subprocess.check_output([P2B.DBUPLOADER_PATH, "list", "etdadmin_upload_362096/"]), ' > Listing "/etdadmin_upload_362096/"... DONE\n [F] 2578    etdadmin_upload_362096_Output.xml\n [F] 2455004 Shashe_ed.depaul_0937F_10005.pdf\n')
         self.assertEqual(subprocess.check_output([P2B.DBUPLOADER_PATH, "list", "etdadmin_upload_362658/"]), ' > Listing "/etdadmin_upload_362658/"... DONE\n [F] 2792    etdadmin_upload_362658_Output.xml\n [F] 58681   McCann Floeter 05212015 Electronic Theses and Disserations Approval Form.docx\n [F] 2006772 McCannFloeter_ed.depaul_0937F_10006.pdf\n')
 

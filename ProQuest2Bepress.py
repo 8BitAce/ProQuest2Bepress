@@ -21,8 +21,13 @@ SMTP_USER = None
 SMTP_PASSWORD = None
 DBUPLOADER_PATH = None
 
+# Pattern for shared links returned by dropbox_uploader.sh
+# Captures the URL
 share_link_pattern = re.compile(r' > Share link: (.*)\n')
+# Pattern for fulltext links in transformed xml
+# Captures the URL
 fulltext_pattern = re.compile(r'<fulltext-url>(.*)</fulltext-url>')
+# Pattern for xml header (e.g. <?xml version="1.0" encoding="UTF-8"?>)
 xml_header_pattern = re.compile(r'<\?xml(.+?)\?>')
 
 
@@ -31,14 +36,24 @@ class MyException(Exception):
 
 
 def listdir_fullpath(d):
+    """
+    Returns directory listing with FULL paths.
+    Parameters:
+        d: The directory to list.
+    """
     return [os.path.join(d, f) for f in os.listdir(d)]
 
 
-def add_slash(string):
-    if string[-1] != "/":
-        return string + "/"
+def add_slash(m):
+    """
+    Helper function that appends a / if one does not exist.
+    Prameters:
+        m: The string to append to.
+    """
+    if m[-1] != "/":
+        return m + "/"
     else:
-        return string
+        return m
 
 
 def unzip(path):
