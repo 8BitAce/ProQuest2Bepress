@@ -1,5 +1,6 @@
 [dirs]
 upload_dir=
+dropbox_dir=
 
 [email]
 recipient_address=

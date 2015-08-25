@@ -15,6 +15,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 UPLOAD_DIR = None
+DB_DIR = None
 RESULT_EMAIL = None
 SMTP_SERVER = None
 SMTP_USER = None
@@ -203,8 +204,8 @@ def dropboxify(dirpath, xml, resource_files):
     for fpath in resource_files:
         fname = os.path.basename(fpath)
         try:
-            subprocess.check_call([DBUPLOADER_PATH, "upload", fpath, dirname + "/" + fname])
-            output = subprocess.check_output([DBUPLOADER_PATH, "share", dirname + "/" + fname])
+            subprocess.check_call([DBUPLOADER_PATH, "upload", fpath, DB_DIR + dirname + "/" + fname])
+            output = subprocess.check_output([DBUPLOADER_PATH, "share", DB_DIR + dirname + "/" + fname])
             match = re.search(share_link_pattern, output)
             if match != None:
                 share_link = match.group(1)
@@ -238,7 +239,7 @@ def dropboxify(dirpath, xml, resource_files):
     
     # Upload finished xml
     try:
-        subprocess.check_call([DBUPLOADER_PATH, "upload", working_dir + finished_fname, dirname + "/" + finished_fname])
+        subprocess.check_call([DBUPLOADER_PATH, "upload", working_dir + finished_fname, DB_DIR + dirname + "/" + finished_fname])
     except Exception as e:
         print e
         print "Error uploading to dropbox!"
@@ -320,6 +321,7 @@ def load_config():
     Loads options from settings.conf into global variables.
     """
     global UPLOAD_DIR
+    global DB_DIR
     global RESULT_EMAIL
     global SMTP_USER
     global SMTP_PASSWORD
@@ -329,7 +331,7 @@ def load_config():
     config.read('settings.conf')
 
     # Check that all options are present
-    dirs_options = ['upload_dir']
+    dirs_options = ['upload_dir', 'dropbox_dir']
     for option in dirs_options:
         if (not config.has_option('dirs', option)) or (config.get('dirs', option) == ''):
             print "Missing option in [dirs]: %s" % option
@@ -346,6 +348,7 @@ def load_config():
             sys.exit()
 
     UPLOAD_DIR = add_slash(config.get('dirs', 'upload_dir'))
+    DB_DIR = add_slash(config.get('dirs', 'dropbox_dir'))
     RESULT_EMAIL = config.get('email', 'recipient_address')
     SMTP_SERVER = config.get('email', 'smtp_server')
     SMTP_USER = config.get('email', 'smtp_user')
