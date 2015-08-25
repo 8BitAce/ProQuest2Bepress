@@ -1,12 +1,26 @@
 [dirs]
+# Location of the SFTP upload directory
+# Ex.: /home/sftp/upload/
 upload_dir=
+
+# Location in Dropbox where finished files will be uploaded
+# Ex.: /P2BTests/
 dropbox_dir=
 
 [email]
+# Address where status emails will be sent
 recipient_address=
+
+# SMTP server used to send emails
 smtp_server=
+
+# SMTP user used to send emails
 smtp_user=
+
+# SMTP password for user used to send emails
 smtp_password=
 
 [dropbox]
+# Full path to dropbox_uploader.sh
+# A copy is included with this distribution 
 dbuploader_path=
