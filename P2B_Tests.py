@@ -11,7 +11,6 @@ import unittest
 from collections import Counter
 
 fulltext_pattern = re.compile(r'<fulltext-url>(.*)</fulltext-url>')
-db_listing_pattern_1 = re.compile(r'')
 
 class TestFileMethods(unittest.TestCase):
 
