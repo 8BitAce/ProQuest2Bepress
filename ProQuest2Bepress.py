@@ -16,6 +16,7 @@ from email.mime.text import MIMEText
 
 UPLOAD_DIR = None
 DB_DIR = None
+XSLT_PATH = None
 RESULT_EMAIL = None
 SMTP_SERVER = None
 SMTP_USER = None
@@ -119,7 +120,7 @@ def transform_files(file_dir):
 
     print "Transforming using XSLT..."
     dom = ET.parse(working_dir + "Combined.xml")
-    xslt = ET.parse("result.xsl")
+    xslt = ET.parse(XSLT_PATH)
     transform = ET.XSLT(xslt)
     newdom = transform(dom)
     result = ET.tostring(newdom, pretty_print=True)
@@ -322,6 +323,7 @@ def load_config():
     """
     global UPLOAD_DIR
     global DB_DIR
+    global XSLT_PATH
     global RESULT_EMAIL
     global SMTP_USER
     global SMTP_PASSWORD
@@ -336,6 +338,11 @@ def load_config():
         if (not config.has_option('dirs', option)) or (config.get('dirs', option) == ''):
             print "Missing option in [dirs]: %s" % option
             sys.exit()
+    xslt_options = ['xslt_path']
+    for option in dirs_options:
+        if (not config.has_option('xslt', option)) or (config.get('xslt', option) == ''):
+            print "Missing option in [xslt]: %s" % option
+            sys.exit()
     email_options = ['recipient_address', 'smtp_server', 'smtp_user', 'smtp_password']
     for option in email_options:
         if (not config.has_option('email', option)) or (config.get('email', option) == ''):
@@ -349,6 +356,7 @@ def load_config():
 
     UPLOAD_DIR = add_slash(config.get('dirs', 'upload_dir'))
     DB_DIR = add_slash(config.get('dirs', 'dropbox_dir'))
+    XSLT_PATH = add_slash(config.get('xslt', 'xslt_path'))
     RESULT_EMAIL = config.get('email', 'recipient_address')
     SMTP_SERVER = config.get('email', 'smtp_server')
     SMTP_USER = config.get('email', 'smtp_user')

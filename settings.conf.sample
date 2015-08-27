@@ -7,6 +7,11 @@ upload_dir=
 # Ex.: /P2BTests/
 dropbox_dir=
 
+[xslt]
+# Path to the XSLT used for transformations.
+# An example result.xsl is included with this distribution.
+xslt_path=
+
 [email]
 # Address where status emails will be sent
 recipient_address=
