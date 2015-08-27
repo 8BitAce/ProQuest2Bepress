@@ -339,7 +339,7 @@ def load_config():
             print "Missing option in [dirs]: %s" % option
             sys.exit()
     xslt_options = ['xslt_path']
-    for option in dirs_options:
+    for option in xslt_options:
         if (not config.has_option('xslt', option)) or (config.get('xslt', option) == ''):
             print "Missing option in [xslt]: %s" % option
             sys.exit()
