@@ -10,12 +10,17 @@ import unittest
 
 from collections import Counter
 
+# Pattern to match the fulltext-url element in xml
 fulltext_pattern = re.compile(r'<fulltext-url>(.*)</fulltext-url>')
 
 class TestFileMethods(unittest.TestCase):
 
+    # Called before each test is run.
     def setUp(self):
+        # Read in the config values. We'll need them.
         P2B.load_config()
+
+        # Remove everything from the UPLOAD_DIR
         rm_files = glob.glob(P2B.UPLOAD_DIR + "*")
         for f in rm_files:
             if os.path.isfile(f):
@@ -23,9 +28,12 @@ class TestFileMethods(unittest.TestCase):
             elif os.path.isdir(f):
                 shutil.rmtree(f)
 
+        # Get a list of the filename of every zip file in ./TestFiles/
         self.zip_files = [os.path.basename(f) for f in glob.glob("./TestFiles/*.zip")]
+        # Get a list of the basenames of every etd
         self.etd_dirs = [os.path.splitext(os.path.basename(f))[0] for f in self.zip_files]
 
+    # Called after each test finishes
     def tearDown(self):
         rm_files = glob.glob(P2B.UPLOAD_DIR + "*")
         for f in rm_files:
@@ -34,26 +42,34 @@ class TestFileMethods(unittest.TestCase):
             elif os.path.isdir(f):
                 shutil.rmtree(f)
 
+    # Copy each zip from ./TestFiles/ to UPLOAD_DIR
     def addFiles(self):
         for zipf in self.zip_files:
             shutil.copy("./TestFiles/" + zipf, P2B.UPLOAD_DIR)
 
     def test_poll_uploaddir(self):
         self.addFiles()
+        # Check that poll_uploaddir() reports all the files have been added
         self.assertEqual(Counter(P2B.poll_uploaddir([])), Counter([P2B.UPLOAD_DIR + f for f in self.zip_files]))
 
     def test_unzip(self):
         self.addFiles()
         for i in range(len(self.zip_files)):
-            path_result = P2B.unzip(P2B.UPLOAD_DIR + self.zip_files[i])
+            P2B.unzip(P2B.UPLOAD_DIR + self.zip_files[i])
+            # Check that a new directory was made for the etd
             self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + self.etd_dirs[i]))
+            # Check that there are files present in the newly created directory
             self.assertTrue(glob.glob(P2B.UPLOAD_DIR + self.etd_dirs[i] + "/*") is not None)
 
 
 class TestTransformationMethods(unittest.TestCase):
 
+    # Called before each test is run.
     def setUp(self):
+        # Read in the config values. We'll need them.
         P2B.load_config()
+
+        # Remove everything from the UPLOAD_DIR
         rm_files = glob.glob(P2B.UPLOAD_DIR + "*")
         for f in rm_files:
             if os.path.isfile(f):
@@ -61,9 +77,12 @@ class TestTransformationMethods(unittest.TestCase):
             elif os.path.isdir(f):
                 shutil.rmtree(f)
 
+        # Get a list of the filename of every zip file in ./TestFiles/
         self.zip_files = [os.path.basename(f) for f in glob.glob("./TestFiles/*.zip")]
+        # Get a list of the basenames of every etd
         self.etd_dirs = [os.path.splitext(os.path.basename(f))[0] for f in self.zip_files]
 
+    # Called after each test finishes
     def tearDown(self):
         rm_files = glob.glob(P2B.UPLOAD_DIR + "*")
         for f in rm_files:
@@ -72,17 +91,21 @@ class TestTransformationMethods(unittest.TestCase):
             elif os.path.isdir(f):
                 shutil.rmtree(f)
 
+    # Copy each zip from ./TestFiles/ to UPLOAD_DIR
     def addFiles(self):
         for zipf in self.zip_files:
             shutil.copy("./TestFiles/" + zipf, P2B.UPLOAD_DIR)
 
     def test_transform_files(self):
         self.addFiles()
+
+        # Unzip each zip file
         for zipf in self.zip_files:
             P2B.unzip(P2B.UPLOAD_DIR + zipf)
 
         # Test each zip
         for zipf in self.zip_files:
+            # If the correct output for a zip is not present we should skip it
             if not os.path.exists("./TestFiles/" + os.path.splitext(zipf)[0] + "_Output.xml"):
                 print "Missing correct output for %s. Skipping." % zipf
                 continue
@@ -96,16 +119,20 @@ class TestTransformationMethods(unittest.TestCase):
             with open(P2B.UPLOAD_DIR + etd_name + "/" + output_fname) as output_f:
                 with open("./TestFiles/" + output_fname) as correct_f:
                     print "Testing %s..." % output_fname
+                    # The generated link will be different each time so we should replace it with something standard
                     output_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in output_f.readlines()]
                     correct_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in correct_f.readlines()]
+                    # Do a diff of the generated file and the correct output
                     for line in context_diff(correct_text, output_text):
                         sys.stdout.write(line)
+                    # Check if the generated output matches the correct output
                     self.assertEqual(output_text, correct_text)
 
         # Test Dropbox uploads
         print "Testing if everything is in Dropbox..."
         file_pattern = re.compile(r'\[F\]')
         for etd in self.etd_dirs:
+            # If the correct output for a zip is not present we should skip it
             if not os.path.exists("./TestFiles/" + etd + "_Output.xml"):
                 continue
 
