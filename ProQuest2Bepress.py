@@ -14,6 +14,7 @@ from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+SLEEP_TIME = None
 UPLOAD_DIR = None
 DB_DIR = None
 XSLT_PATH = None
@@ -321,6 +322,7 @@ def load_config():
     """
     Loads options from settings.conf into global variables.
     """
+    global SLEEP_TIME
     global UPLOAD_DIR
     global DB_DIR
     global XSLT_PATH
@@ -333,6 +335,11 @@ def load_config():
     config.read('settings.conf')
 
     # Check that all options are present
+    time_options = ['sleep_time']
+    for option in time_options:
+        if (not config.has_option('time', option)) or (config.get('time', option) == ''):
+            print "Missing option in [time]: %s" % option
+            sys.exit()
     dirs_options = ['upload_dir', 'dropbox_dir']
     for option in dirs_options:
         if (not config.has_option('dirs', option)) or (config.get('dirs', option) == ''):
@@ -354,6 +361,7 @@ def load_config():
             print "Missing option in [dropbox]: %s" % option
             sys.exit()
 
+    SLEEP_TIME = int(config.get('time', 'sleep_time'))
     UPLOAD_DIR = add_slash(config.get('dirs', 'upload_dir'))
     DB_DIR = add_slash(config.get('dirs', 'dropbox_dir'))
     XSLT_PATH = config.get('xslt', 'xslt_path')
@@ -365,7 +373,6 @@ def load_config():
 
 
 def run_listener():
-    # TODO: Change to append!
     seen_files_f = open(".seen.txt", "a+")
     seen_files = seen_files_f.readlines()
     with open(".broken.txt", "r") as b:
@@ -373,8 +380,7 @@ def run_listener():
 
     # Main run loop
     while True:
-        # TODO: Probably want to raise this
-        time.sleep(1)
+        time.sleep(SLEEP_TIME)
         new = poll_uploaddir(seen_files)
         if new != None:
             # There were new files. Unzip and process them.

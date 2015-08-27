@@ -1,3 +1,8 @@
+[time]
+# How long to wait between checking for new files in seconds
+# Ex.: 30
+sleep_time=
+
 [dirs]
 # Location of the SFTP upload directory
 # Ex.: /home/sftp/upload/
