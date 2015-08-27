@@ -356,7 +356,7 @@ def load_config():
 
     UPLOAD_DIR = add_slash(config.get('dirs', 'upload_dir'))
     DB_DIR = add_slash(config.get('dirs', 'dropbox_dir'))
-    XSLT_PATH = add_slash(config.get('xslt', 'xslt_path'))
+    XSLT_PATH = config.get('xslt', 'xslt_path')
     RESULT_EMAIL = config.get('email', 'recipient_address')
     SMTP_SERVER = config.get('email', 'smtp_server')
     SMTP_USER = config.get('email', 'smtp_user')
