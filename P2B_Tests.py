@@ -23,6 +23,9 @@ class TestFileMethods(unittest.TestCase):
             elif os.path.isdir(f):
                 shutil.rmtree(f)
 
+        self.zip_files = [os.path.basename(f) for f in glob.glob("./TestFiles/*.zip")]
+        self.etd_dirs = [os.path.splitext(os.path.basename(f))[0] for f in self.zip_files]
+
     def tearDown(self):
         rm_files = glob.glob(P2B.UPLOAD_DIR + "*")
         for f in rm_files:
@@ -32,19 +35,19 @@ class TestFileMethods(unittest.TestCase):
                 shutil.rmtree(f)
 
     def addFiles(self):
-        shutil.copy("./TestFiles/etdadmin_upload_362096.zip", P2B.UPLOAD_DIR)
-        shutil.copy("./TestFiles/etdadmin_upload_362658.zip", P2B.UPLOAD_DIR)
+        for zipf in self.zip_files:
+            shutil.copy("./TestFiles/" + zipf, P2B.UPLOAD_DIR)
 
     def test_poll_uploaddir(self):
         self.addFiles()
-        self.assertEqual(Counter(P2B.poll_uploaddir([])), Counter([P2B.UPLOAD_DIR + 'etdadmin_upload_362096.zip', P2B.UPLOAD_DIR + 'etdadmin_upload_362658.zip']))
+        self.assertEqual(Counter(P2B.poll_uploaddir([])), Counter([P2B.UPLOAD_DIR + f for f in self.zip_files]))
 
     def test_unzip(self):
         self.addFiles()
-        path_result = P2B.unzip(P2B.UPLOAD_DIR + 'etdadmin_upload_362096.zip')
-        self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + "etdadmin_upload_362096"))
-        self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + "etdadmin_upload_362096/Shashe_ed.depaul_0937F_10005_DATA.xml"))
-        self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + "etdadmin_upload_362096/Shashe_ed.depaul_0937F_10005.pdf"))
+        for i in range(len(self.zip_files)):
+            path_result = P2B.unzip(P2B.UPLOAD_DIR + self.zip_files[i])
+            self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + self.etd_dirs[i]))
+            self.assertTrue(glob.glob(P2B.UPLOAD_DIR + self.etd_dirs[i] + "/*") is not None)
 
 
 class TestTransformationMethods(unittest.TestCase):
@@ -58,6 +61,9 @@ class TestTransformationMethods(unittest.TestCase):
             elif os.path.isdir(f):
                 shutil.rmtree(f)
 
+        self.zip_files = [os.path.basename(f) for f in glob.glob("./TestFiles/*.zip")]
+        self.etd_dirs = [os.path.splitext(os.path.basename(f))[0] for f in self.zip_files]
+
     def tearDown(self):
         rm_files = glob.glob(P2B.UPLOAD_DIR + "*")
         for f in rm_files:
@@ -67,44 +73,44 @@ class TestTransformationMethods(unittest.TestCase):
                 shutil.rmtree(f)
 
     def addFiles(self):
-        shutil.copy("./TestFiles/etdadmin_upload_362096.zip", P2B.UPLOAD_DIR)
-        shutil.copy("./TestFiles/etdadmin_upload_362658.zip", P2B.UPLOAD_DIR)
+        for zipf in self.zip_files:
+            shutil.copy("./TestFiles/" + zipf, P2B.UPLOAD_DIR)
 
     def test_transform_files(self):
         self.addFiles()
-        P2B.unzip(P2B.UPLOAD_DIR + 'etdadmin_upload_362096.zip')
-        P2B.unzip(P2B.UPLOAD_DIR + 'etdadmin_upload_362658.zip')
+        for zipf in self.zip_files:
+            P2B.unzip(P2B.UPLOAD_DIR + zipf)
 
-        # Test etdadmin_upload_362096.zip
-        print "Testing etdadmin_upload_362096.zip..."
-        P2B.transform_files(P2B.UPLOAD_DIR + 'etdadmin_upload_362096/')
-        self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + "etdadmin_upload_362096/etdadmin_upload_362096_Output.xml"))
-        with open(P2B.UPLOAD_DIR + "etdadmin_upload_362096/etdadmin_upload_362096_Output.xml") as output_f:
-            with open("./TestFiles/etdadmin_upload_362096_Output_Correct.xml") as correct_f:
-                print "Testing etdadmin_upload_362096_Output.xml..."
-                output_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in output_f.readlines()]
-                correct_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in correct_f.readlines()]
-                for line in context_diff(correct_text, output_text, fromfile='etdadmin_upload_362096_Output_Correct.xml', tofile='etdadmin_upload_362096_Output.xml'):
-                    sys.stdout.write(line)
-                self.assertEqual(output_text, correct_text)
+        # Test each zip
+        for zipf in self.zip_files:
+            if not os.path.exists("./TestFiles/" + os.path.splitext(zipf)[0] + "_Output.xml"):
+                print "Missing correct output for %s. Skipping." % zipf
+                continue
 
-        # Test etdadmin_upload_362658.zip
-        print "Testing etdadmin_upload_362658.zip..."
-        P2B.transform_files(P2B.UPLOAD_DIR + 'etdadmin_upload_362658/')
-        self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + "etdadmin_upload_362658/etdadmin_upload_362658_Output.xml"))
-        with open(P2B.UPLOAD_DIR + "etdadmin_upload_362658/etdadmin_upload_362658_Output.xml") as output_f:
-            with open("./TestFiles/etdadmin_upload_362658_Output_Correct.xml") as correct_f:
-                print "Testing etdadmin_upload_362658_Output.xml..."
-                output_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in output_f.readlines()]
-                correct_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in correct_f.readlines()]
-                for line in context_diff(correct_text, output_text, fromfile='etdadmin_upload_362658_Output_Correct.xml', tofile='etdadmin_upload_362658_Output.xml'):
-                    sys.stdout.write(line)
-                self.assertEqual(output_text, correct_text)
+            print "Testing %s..." % zipf
+            etd_name = os.path.splitext(zipf)[0]
+            P2B.transform_files(P2B.UPLOAD_DIR + etd_name + '/')
+
+            output_fname = etd_name + "_Output.xml"
+            self.assertTrue(os.path.exists(P2B.UPLOAD_DIR + etd_name + "/" + output_fname))
+            with open(P2B.UPLOAD_DIR + etd_name + "/" + output_fname) as output_f:
+                with open("./TestFiles/" + output_fname) as correct_f:
+                    print "Testing %s..." % output_fname
+                    output_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in output_f.readlines()]
+                    correct_text = [re.sub(fulltext_pattern, "<fulltext-url>LINK</fulltext-url>", line) for line in correct_f.readlines()]
+                    for line in context_diff(correct_text, output_text):
+                        sys.stdout.write(line)
+                    self.assertEqual(output_text, correct_text)
 
         # Test Dropbox uploads
         print "Testing if everything is in Dropbox..."
-        self.assertEqual(subprocess.check_output([P2B.DBUPLOADER_PATH, "list", P2B.DB_DIR + "etdadmin_upload_362096/"]), ' > Listing "/P2BTests/etdadmin_upload_362096/"... DONE\n [F] 2578    etdadmin_upload_362096_Output.xml\n [F] 2455004 Shashe_ed.depaul_0937F_10005.pdf\n')
-        self.assertEqual(subprocess.check_output([P2B.DBUPLOADER_PATH, "list", P2B.DB_DIR + "etdadmin_upload_362658/"]), ' > Listing "/P2BTests/etdadmin_upload_362658/"... DONE\n [F] 2792    etdadmin_upload_362658_Output.xml\n [F] 58681   McCann Floeter 05212015 Electronic Theses and Disserations Approval Form.docx\n [F] 2006772 McCannFloeter_ed.depaul_0937F_10006.pdf\n')
+        file_pattern = re.compile(r'\[F\]')
+        for etd in self.etd_dirs:
+            if not os.path.exists("./TestFiles/" + etd + "_Output.xml"):
+                continue
+
+            dbu_listing = subprocess.check_output([P2B.DBUPLOADER_PATH, "list", P2B.DB_DIR + etd])
+            self.assertEqual(re.search(file_pattern, dbu_listing) != None, True)
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(TestFileMethods)
