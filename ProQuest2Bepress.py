@@ -32,7 +32,8 @@ share_link_pattern = re.compile(r' > Share link: (.*)\n')
 fulltext_pattern = re.compile(r'<fulltext-url>(.*)</fulltext-url>')
 # Pattern for xml header (e.g. <?xml version="1.0" encoding="UTF-8"?>)
 xml_header_pattern = re.compile(r'<\?xml(.+?)\?>')
-
+# Pattern for attachments
+attachment_pattern = re.compile(r'<DISS_file_name>(.*)</DISS_file_name>')
 
 class MyException(Exception):
     pass
@@ -131,7 +132,17 @@ def transform_files(file_dir):
     print "Uploading files and inserting links..."
     dropboxify(dirname, working_dir + "Transformed.xml", resource_files)
 
-    email_success(dirname)
+    if len(resource_files) <= 1:
+        email_success(dirname)
+    else:
+        attachments = []
+        for xml in xmls:
+            with open(xml) as f:
+                xml_text = f.read()
+                atts = re.findall(attachment_pattern, xml_text)
+                if len(atts) > 0:
+                    attachments += re.findall(attachment_pattern, xml_text)
+        email_success_attachments(dirname, attachments)
     
 
 def combine_xmls(dirpath, xmls):
@@ -268,6 +279,34 @@ def email_success(dirname):
 
     # Create and add body
     body = "%s/Output.xml is ready to be uploaded." % dirname
+    part1 = MIMEText(body, 'plain')
+    msg.attach(part1)
+
+    # Send the email using SMTP
+    s = smtplib.SMTP_SSL(SMTP_SERVER)
+    s.login(SMTP_USER, SMTP_PASSWORD)
+    s.sendmail("pi@localhost", RESULT_EMAIL, msg.as_string())
+    s.quit()
+
+
+def email_success_attachments(dirname, attachments):
+    """
+    Email administrator a success message with need for manual attachments.
+    Parameters:
+        dirname: Name of unzipped ProQuest ETD directory
+    """
+    # Set up multipart message
+    msg = MIMEMultipart()
+    msg['Subject'] = '%s requires manual intervention' % dirname
+    msg['To'] = RESULT_EMAIL
+    msg['From'] = "pi@localhost"
+    msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
+
+    # Create and add body
+    body = "%s/Output.xml is ready to be uploaded.\n" % dirname
+    body += "Additionally the following files will need to be manually attached: \n"
+    for att in attachments:
+        body += os.path.basename(att) + "\n"
     part1 = MIMEText(body, 'plain')
     msg.attach(part1)
 
