@@ -216,10 +216,11 @@ def dropboxify(dirpath, xml, resource_files):
     # Upload all the resource files to dropbox and generate links for each
     # The resulting generated links get added to the link_map
     for fpath in resource_files:
+        upload_folder = dirpath.split("/")[-3]
         fname = os.path.basename(fpath)
         try:
-            subprocess.check_call([DBUPLOADER_PATH, "upload", fpath, DB_DIR + dirname + "/" + fname])
-            output = subprocess.check_output([DBUPLOADER_PATH, "share", DB_DIR + dirname + "/" + fname])
+            subprocess.check_call([DBUPLOADER_PATH, "upload", fpath, DB_DIR + "/" + upload_folder + "/" + dirname + "/" + fname])
+            output = subprocess.check_output([DBUPLOADER_PATH, "share", DB_DIR + "/" + upload_folder + "/" + dirname + "/" + fname])
             match = re.search(share_link_pattern, output)
             if match != None:
                 share_link = match.group(1)
@@ -253,7 +254,7 @@ def dropboxify(dirpath, xml, resource_files):
     
     # Upload finished xml
     try:
-        subprocess.check_call([DBUPLOADER_PATH, "upload", working_dir + finished_fname, DB_DIR + dirname + "/" + finished_fname])
+        subprocess.check_call([DBUPLOADER_PATH, "upload", working_dir + finished_fname, DB_DIR + "/" + upload_folder + "/" + dirname + "/" + finished_fname])
     except Exception as e:
         print e
         print "Error uploading to dropbox!"
