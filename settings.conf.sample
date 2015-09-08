@@ -17,10 +17,7 @@ dropbox_dir=
 # An example result.xsl is included with this distribution.
 xslt_path=
 
-[email]
-# Address where status emails will be sent
-recipient_address=
-
+[smtp]
 # SMTP server used to send emails
 smtp_server=
 
@@ -29,6 +26,10 @@ smtp_user=
 
 # SMTP password for user used to send emails
 smtp_password=
+
+[email]
+# Add one line for each email address to send results to based on subfolder uploaded to.
+# Ex.: MySubfolder=my.email@domain.com
 
 [dropbox]
 # Full path to dropbox_uploader.sh

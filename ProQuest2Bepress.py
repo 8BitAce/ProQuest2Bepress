@@ -14,6 +14,7 @@ from email.message import Message
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+config = None
 SLEEP_TIME = None
 UPLOAD_DIR = None
 DB_DIR = None
@@ -60,15 +61,15 @@ def add_slash(m):
         return m
 
 
-def unzip(path):
+def unzip(folder, path):
     """
     Parameters:
         path: Full path to .zip file
     Returns:
         (String) Path to unzipped directory.
     """
-    filename = os.path.basename(path)
-    working_dir = UPLOAD_DIR + os.path.splitext(filename)[0]
+    filename = os.path.basename(os.path.normpath(path))
+    working_dir = os.path.join(folder, os.path.splitext(filename)[0])
     try:
         os.mkdir(working_dir)
     except OSError as e:
@@ -88,7 +89,7 @@ def unzip(path):
         print path + ": " + "No such file in upload directory!"
         print "Sending error report..."
         os.rmdir(working_dir)
-        email_failure(filename, "Tried to extract %s but there was no such file in %s!" % (filename, UPLOAD_DIR))
+        email_failure(filename, "Tried to extract %s but there was no such file in %s!" % (filename, folder))
         raise MyException("File missing")
 
 
@@ -115,10 +116,10 @@ def transform_files(file_dir):
         print "More than one xml file"
 
     dirname = file_dir.split("/")[-2]
-    working_dir = add_slash(UPLOAD_DIR + dirname)
+    working_dir = dirpath
 
     print "Combining XMLs..."
-    combine_xmls(dirname, xmls)
+    combine_xmls(dirpath, xmls)
 
     print "Transforming using XSLT..."
     dom = ET.parse(working_dir + "Combined.xml")
@@ -130,7 +131,7 @@ def transform_files(file_dir):
         f.write(result)
 
     print "Uploading files and inserting links..."
-    dropboxify(dirname, working_dir + "Transformed.xml", resource_files)
+    dropboxify(dirpath, working_dir + "Transformed.xml", resource_files)
 
     if len(resource_files) <= 1:
         email_success(dirname)
@@ -157,8 +158,8 @@ def combine_xmls(dirpath, xmls):
     Side-Effects:
         Writes combined xmls to Combined.xml
     """
-    dirname = os.path.basename(dirpath)
-    with open(UPLOAD_DIR + dirname + "/Combined.xml", "ab+") as f:
+    dirname = os.path.basename(os.path.normpath(dirpath))
+    with open(dirpath + "/Combined.xml", "ab+") as f:
         f.write("""<?xml version="1.0" encoding="UTF-8"?>\r\n""")
         f.write("""<?xml-stylesheet type="text/xsl" href="result.xsl"?>\r\n""")
         f.write("""<DISS_Documents>""")
@@ -210,7 +211,7 @@ def dropboxify(dirpath, xml, resource_files):
     link_map = dict()
 
     # Base name of unzipped ETD directory
-    dirname = os.path.basename(dirpath)
+    dirname = os.path.basename(os.path.normpath(dirpath))
 
     # Upload all the resource files to dropbox and generate links for each
     # The resulting generated links get added to the link_map
@@ -236,7 +237,7 @@ def dropboxify(dirpath, xml, resource_files):
             raise MyException("Dropbox upload error")
 
     # Where we want to put the resulting files
-    working_dir = add_slash(UPLOAD_DIR + dirname)
+    working_dir = dirpath
     # Base name of original xml
     xml_basename = os.path.basename(xml)
     # Name of our finished xml file
@@ -342,14 +343,14 @@ def email_failure(culprit, message):
     s.quit()
 
 
-def poll_uploaddir(seen_files):
+def poll_uploaddir(folder, seen_files):
     """
     Checks for new files in the upload dir.
     Parameters:
         seen_files: A list of already seen filepaths
     """
-    before = dict ([(f, None) for f in seen_files if os.path.isfile(os.path.join(UPLOAD_DIR, f))])
-    after = dict ([(f, None) for f in listdir_fullpath(UPLOAD_DIR) if os.path.isfile(f)])
+    before = dict ([(f, None) for f in seen_files if os.path.isfile(f)])
+    after = dict ([(f, None) for f in listdir_fullpath(folder) if os.path.isfile(f)])
     added = [f for f in after if not f in before]
     if added: 
         print "Added: ", ", ".join (added)
@@ -365,13 +366,11 @@ def load_config():
     global UPLOAD_DIR
     global DB_DIR
     global XSLT_PATH
-    global RESULT_EMAIL
+    #global RESULT_EMAIL
     global SMTP_USER
     global SMTP_PASSWORD
     global SMTP_SERVER
     global DBUPLOADER_PATH
-    config = ConfigParser.ConfigParser(allow_no_value=False)
-    config.read('settings.conf')
 
     # Check that all options are present
     time_options = ['sleep_time']
@@ -389,10 +388,10 @@ def load_config():
         if (not config.has_option('xslt', option)) or (config.get('xslt', option) == ''):
             print "Missing option in [xslt]: %s" % option
             sys.exit()
-    email_options = ['recipient_address', 'smtp_server', 'smtp_user', 'smtp_password']
-    for option in email_options:
-        if (not config.has_option('email', option)) or (config.get('email', option) == ''):
-            print "Missing option in [email]: %s" % option
+    smtp_options = ['smtp_server', 'smtp_user', 'smtp_password']
+    for option in smtp_options:
+        if (not config.has_option('smtp', option)) or (config.get('smtp', option) == ''):
+            print "Missing option in [smtp]: %s" % option
             sys.exit()
     dropbox_options = ['dbuploader_path']
     for option in dropbox_options:
@@ -404,46 +403,60 @@ def load_config():
     UPLOAD_DIR = add_slash(config.get('dirs', 'upload_dir'))
     DB_DIR = add_slash(config.get('dirs', 'dropbox_dir'))
     XSLT_PATH = config.get('xslt', 'xslt_path')
-    RESULT_EMAIL = config.get('email', 'recipient_address')
-    SMTP_SERVER = config.get('email', 'smtp_server')
-    SMTP_USER = config.get('email', 'smtp_user')
-    SMTP_PASSWORD = config.get('email', 'smtp_password')
+    #RESULT_EMAIL = config.get('email', 'recipient_address')
+    SMTP_SERVER = config.get('smtp', 'smtp_server')
+    SMTP_USER = config.get('smtp', 'smtp_user')
+    SMTP_PASSWORD = config.get('smtp', 'smtp_password')
     DBUPLOADER_PATH = config.get('dropbox', 'dbuploader_path')
 
 
 def run_listener():
     seen_files_f = open(".seen.txt", "a+")
-    seen_files = seen_files_f.readlines()
+    seen_files = [line.strip() for line in seen_files_f.readlines()]
     with open(".broken.txt", "r") as b:
-        seen_files += b.readlines()
+        seen_files += [line.strip() for line in b.readlines()]
 
     # Main run loop
     while True:
-        time.sleep(SLEEP_TIME)
-        new = poll_uploaddir(seen_files)
-        if new != None:
-            # There were new files. Unzip and process them.
-            for new_f in new:
-                seen_files += [new_f]
-                seen_files_f.write(new_f + "\n")
+        # List of all subdirectories directly below the UPLOAD_DIR
+        folders = [f for f in listdir_fullpath(UPLOAD_DIR) if os.path.isdir(f)]
+        for folder in folders:
+            global RESULT_EMAIL
+            bname = os.path.basename(os.path.normpath(folder))
+            if (not config.has_option('email', bname)) or (config.get('email', bname) == ''):
+                print "No email confiugred for %s option in [email]" % bname
+                print "Skipping this folder until one is configured."
+                continue
+            RESULT_EMAIL = config.get('email', bname)
+            new = poll_uploaddir(folder, seen_files)
+            if new != None:
+                # There were new files. Unzip and process them.
+                for new_f in new:
+                    seen_files += [str(os.path.join(folder, new_f))]
+                    seen_files_f.write(str(os.path.join(folder, new_f)) + "\n")
 
-                if new_f.split(".")[1] == "zip":
-                    try:
-                        unzipped_path = unzip(new_f)
-                        transform_files(unzipped_path)
-                    except MyException as e:
-                        # If we reach this point, one of the uploaded zips was not able to be processed.
-                        # In this case we want to add it to .broken.txt so that the script can keep running while ignoring
-                        # the file that caused the error.
-                        print "There was a problem processing %s. An email has been sent detailing the issue." % (new_f)
-                        print "Adding %s to .broken.txt. Please fix the issue, then remove the entry in .broken.txt!" % (new_f)
-                        with open(".broken.txt", "a+") as b:
-                            b.write(new_f + "\n")
-                else:
-                    print "Non-zip file in upload directory!"
+                    if new_f.split(".")[1] == "zip":
+                        try:
+                            unzipped_path = unzip(folder, new_f)
+                            transform_files(unzipped_path)
+                        except MyException as e:
+                            # If we reach this point, one of the uploaded zips was not able to be processed.
+                            # In this case we want to add it to .broken.txt so that the script can keep running while ignoring
+                            # the file that caused the error.
+                            print "There was a problem processing %s. An email has been sent detailing the issue." % (new_f)
+                            print "Adding %s to .broken.txt. Please fix the issue, then remove the entry in .broken.txt!" % (new_f)
+                            with open(".broken.txt", "a+") as b:
+                                b.write(new_f + "\n")
+                    else:
+                        print "Non-zip file in upload directory!"
+
+        time.sleep(SLEEP_TIME)
 
 
 def main():
+    global config
+    config = ConfigParser.ConfigParser(allow_no_value=False)
+    config.read('settings.conf')
     load_config()
     run_listener()
 
