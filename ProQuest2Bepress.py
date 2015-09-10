@@ -64,6 +64,7 @@ def add_slash(m):
 def unzip(folder, path):
     """
     Parameters:
+        folder: Path to specific upload folder
         path: Full path to .zip file
     Returns:
         (String) Path to unzipped directory.
