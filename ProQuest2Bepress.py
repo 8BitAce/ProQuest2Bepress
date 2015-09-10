@@ -373,6 +373,10 @@ def load_config():
     global SMTP_SERVER
     global DBUPLOADER_PATH
 
+    global config
+    config = ConfigParser.ConfigParser(allow_no_value=False)
+    config.read('settings.conf')
+
     # Check that all options are present
     time_options = ['sleep_time']
     for option in time_options:
@@ -455,9 +459,6 @@ def run_listener():
 
 
 def main():
-    global config
-    config = ConfigParser.ConfigParser(allow_no_value=False)
-    config.read('settings.conf')
     load_config()
     run_listener()
 
