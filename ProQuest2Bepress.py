@@ -117,10 +117,10 @@ def transform_files(file_dir):
         print "More than one xml file"
 
     dirname = file_dir.split("/")[-2]
-    working_dir = dirpath
+    working_dir = file_dir
 
     print "Combining XMLs..."
-    combine_xmls(dirpath, xmls)
+    combine_xmls(file_dir, xmls)
 
     print "Transforming using XSLT..."
     dom = ET.parse(working_dir + "Combined.xml")
@@ -132,7 +132,7 @@ def transform_files(file_dir):
         f.write(result)
 
     print "Uploading files and inserting links..."
-    dropboxify(dirpath, working_dir + "Transformed.xml", resource_files)
+    dropboxify(file_dir, working_dir + "Transformed.xml", resource_files)
 
     if len(resource_files) <= 1:
         email_success(dirname)
