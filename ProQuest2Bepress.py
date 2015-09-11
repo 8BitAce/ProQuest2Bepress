@@ -375,7 +375,7 @@ def load_config():
     global DBUPLOADER_PATH
 
     global config
-    config = ConfigParser.ConfigParser(allow_no_value=False)
+    config = ConfigParser.ConfigParser()
     config.read('settings.conf')
 
     # Check that all options are present
