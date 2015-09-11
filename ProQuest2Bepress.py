@@ -1,4 +1,5 @@
 import ConfigParser
+import contextlib
 import lxml.etree as ET
 import os
 import re
@@ -83,7 +84,7 @@ def unzip(folder, path):
         raise MyException("Unclean runthrough")
 
     try:
-        with zipfile.ZipFile(path, 'r') as myzip:
+        with contextlib.closing(zipfile.ZipFile(path, 'r')) as myzip:
             myzip.extractall(working_dir)
         return add_slash(working_dir)
     except IOError as e:
