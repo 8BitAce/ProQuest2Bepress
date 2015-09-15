@@ -8,7 +8,6 @@ import subprocess
 import sys
 import unittest
 
-from collections import Counter
 
 # Pattern to match the fulltext-url element in xml
 fulltext_pattern = re.compile(r'<fulltext-url>(.*)</fulltext-url>')
@@ -65,7 +64,9 @@ class TestFileMethods(unittest.TestCase):
         for test_dir in self.test_dirs:
             upload_dir = os.path.join(P2B.UPLOAD_DIR, os.path.basename(test_dir)) + os.sep
             # Check that poll_uploaddir() reports all the files have been added
-            self.assertEqual(Counter(P2B.poll_uploaddir(upload_dir, [])), Counter([os.path.join(upload_dir, f) for f in self.zip_files[test_dir]]))
+            list1 = P2B.poll_uploaddir(upload_dir, [])
+            list2 = [os.path.join(upload_dir, f) for f in self.zip_files[test_dir]]
+            self.assertTrue(len(list1) == len(list2) and sorted(list1) == sorted(list2))
 
     def test_unzip(self):
         self.addFiles()
@@ -121,6 +122,14 @@ class TestTransformationMethods(unittest.TestCase):
         self.addFiles()
 
         for test_dir in self.test_dirs:
+            # TODO: This logic really shouldn't have to be in the tests.
+            bname = os.path.basename(os.path.normpath(test_dir))
+            if (not P2B.config.has_option('email', bname)) or (P2B.config.get('email', bname) == ''):
+                print "No email confiugred for %s option in [email]" % bname
+                print "Skipping this folder until one is configured."
+                continue
+            P2B.RESULT_EMAIL = P2B.config.get('email', bname)
+
             upload_dir = os.path.join(P2B.UPLOAD_DIR, os.path.basename(test_dir)) + os.sep
 
             # Unzip each zip file
@@ -157,10 +166,10 @@ class TestTransformationMethods(unittest.TestCase):
             file_pattern = re.compile(r'\[F\]')
             for etd in self.etd_dirs[test_dir]:
                 # If the correct output for a zip is not present we should skip it
-                if not os.path.exists("./TestFiles/" + os.path.splitext(zipf)[0] + "_Output.xml"):
+                if not os.path.exists("./TestFiles/" + etd + "_Output.xml"):
                     continue
 
-                dbu_listing = subprocess.check_output([P2B.DBUPLOADER_PATH, "list", P2B.DB_DIR + "/" + etd + "/" + os.path.basename(test_dir) + "/" + etd])
+                dbu_listing = subprocess.check_output([P2B.DBUPLOADER_PATH, "list", P2B.DB_DIR + bname + "/" + etd +  "/"])
                 self.assertEqual(re.search(file_pattern, dbu_listing) != None, True)
 
 if __name__ == '__main__':

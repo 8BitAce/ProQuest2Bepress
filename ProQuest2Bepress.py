@@ -40,6 +40,23 @@ attachment_pattern = re.compile(r'<DISS_file_name>(.*)</DISS_file_name>')
 class MyException(Exception):
     pass
 
+# Python 2.6's subprocess module does not have check_call
+# We will add it here
+if "check_output" not in dir( subprocess ):
+    def f(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd)
+        return output
+    subprocess.check_output = f
+
 
 def listdir_fullpath(d):
     """
@@ -287,7 +304,7 @@ def email_success(dirname):
     msg.attach(part1)
 
     # Send the email using SMTP
-    s = smtplib.SMTP_SSL(SMTP_SERVER)
+    s = smtplib.SMTP_SSL(SMTP_SERVER, 465)
     s.login(SMTP_USER, SMTP_PASSWORD)
     s.sendmail("pi@localhost", RESULT_EMAIL, msg.as_string())
     s.quit()
@@ -315,7 +332,7 @@ def email_success_attachments(dirname, attachments):
     msg.attach(part1)
 
     # Send the email using SMTP
-    s = smtplib.SMTP_SSL(SMTP_SERVER)
+    s = smtplib.SMTP_SSL(SMTP_SERVER, 465)
     s.login(SMTP_USER, SMTP_PASSWORD)
     s.sendmail("pi@localhost", RESULT_EMAIL, msg.as_string())
     s.quit()
@@ -340,7 +357,7 @@ def email_failure(culprit, message):
     msg.attach(part1)
 
     # Send the email using SMTP
-    s = smtplib.SMTP_SSL(SMTP_SERVER)
+    s = smtplib.SMTP_SSL(SMTP_SERVER, 465)
     s.login(SMTP_USER, SMTP_PASSWORD)
     s.sendmail("pi@localhost", RESULT_EMAIL, msg.as_string())
     s.quit()
