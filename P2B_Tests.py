@@ -173,7 +173,10 @@ class TestTransformationMethods(unittest.TestCase):
                 self.assertEqual(re.search(file_pattern, dbu_listing) != None, True)
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestFileMethods)
-    unittest.TextTestRunner(verbosity=2).run(suite)
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestTransformationMethods)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    print "WARNING: This test suite WILL remove everything from the configured directories!"
+    response = raw_input("Really continue? (y/n) ")
+    if response == "y":
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestFileMethods)
+        unittest.TextTestRunner(verbosity=2).run(suite)
+        suite = unittest.TestLoader().loadTestsFromTestCase(TestTransformationMethods)
+        unittest.TextTestRunner(verbosity=2).run(suite)
